@@ -2,7 +2,9 @@ import vk_api
 from configuration import user_token
 from vk_api.exceptions import ApiError
 
-class VkTools():
+
+class VkTools:
+
     def __init__(self, token):
         self.exist_api = vk_api.VkApi(token=token)
 
@@ -10,64 +12,64 @@ class VkTools():
 
         try:
             info = self.exist_api.method('users.get',
-                                       {'user_id': user_id,
-                                        'fields': 'bdate,city,sex'
-                                        }
-                                      )
+                                         {'user_id': user_id,
+                                          'fields': 'bdate,city,sex'
+                                          }
+                                         )
         except ApiError:
             return
 
         return info
 
-        def user_search(self, city_id, age_from, age_to, sex, offset=None):
+    def user_search(self, city_id, age_from, age_to, sex, offset=None):
 
-            try:
-                profiles = self.exist_api.method('users.search',
-                                               {'city_id': city_id,
-                                                'age_from': age_from,
-                                                'age_to': age_to,
-                                                'sex': sex,
-                                                'count': 30,
-                                                'offset': offset
-                                                })
+        try:
+            profiles = self.exist_api.method('users.search',
+                                             {'city_id': city_id,
+                                              'age_from': age_from,
+                                              'age_to': age_to,
+                                              'sex': sex,
+                                              'count': 30,
+                                              'offset': offset
+                                              })
 
-            except ApiError:
-                return
+        except ApiError:
+            return
 
-            profiles = profiles['items']
+        profiles = profiles['items']
 
-            final_result = []
-            for profile in profiles:
-                if profile['is_closed'] == False:
-                    final_result.append({'name': profile['first_name'] + ' ' + profile['last_name'],
-                                   'id': profile['id']
-                                   })
+        final_result = []
+        for profile in profiles:
+            if profile['is_closed'] == False:
+                final_result.append({'name': profile['first_name'] + ' ' + profile['last_name'],
+                                    'id': profile['id']
+                                    })
 
-            return final_result
+        return final_result
 
-        def photos_get(self, user_id):
-            global top3
-            photos = self.exist_api.method('photos.get',
-                                         {'album_id': 'profile',
-                                          'owner_id': user_id
-                                          }
-                                         )
-            try:
-                photos = photos['items']
-            except KeyError:
-                return
+    def photos_get(self, user_id):
 
-            final_result = []
-            for num, photo in enumerate(photos):
-                final_result.append({'owner_id': photo['owner_id'],
-                               'id': photo['id'],
-                               'hype': sum(photo['likes'], photo['comments'])
-                               })
-            for hype in final_result:
-                top3 = sorted(final_result, key=hype.get, reverse=True)[:3]
+        photos = self.exist_api.method('photos.get',
+                                       {'album_id': 'profile',
+                                        'owner_id': user_id
+                                        }
+                                       )
+        try:
+            photos = photos['items']
+        except KeyError:
+            return
 
-            return top3
-
+        final_result = []
+        for num, photo in enumerate(photos):
+            final_result.append({'owner_id': photo['owner_id'],
+                                 'id': photo['id'],
+                                 'likes': photo['likes']['count'],
+                                 'comments': photo['comments']['count']
+                                 })
+        final_result = sorted(final_result, key=lambda x: x['likes']['count'], reverse=True)
+        if len(final_result) > 3:
+            final_result = final_result[:3]
+        return final_result
 
 
 if __name__ == '__main__':
