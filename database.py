@@ -2,11 +2,12 @@ import psycopg2
 from configuration import database, user, password
 
 with psycopg2.connect(
-              database=database,
-              user=user,
-              password=password
+        database=database,
+        user=user,
+        password=password
 ) as conn:
-    conn.commit()
+    conn.autocommit = True
+
 
 def viewed_people_create_table():
     with conn.cursor() as cur:
@@ -16,12 +17,14 @@ def viewed_people_create_table():
             id_vk varchar(80) PRIMARY KEY);"""
         )
 
-def viewed_people_save_information(conn, id_vk):
+
+def viewed_people_save_information(id_vk):
     with conn.cursor() as cur:
         cur.execute(
             """INSERT INTO viewed_people(id_vk) VALUES(%s);""",
-            (id_vk)
+            (id_vk,)
         )
+
 
 def checking_user_data():
     with conn.cursor() as cur:
@@ -30,9 +33,15 @@ def checking_user_data():
         )
         return cur.fetchall()
 
+
 def viewed_people_delete_table():
     with conn.cursor() as cur:
         cur.execute(
             """DROP TABLE viewed_people;"""
         )
+
+
+viewed_people_create_table()
+print("Database was created!")
+
 
