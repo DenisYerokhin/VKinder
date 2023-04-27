@@ -5,6 +5,8 @@ from vk_api.utils import get_random_id
 
 from configuration import bot_token, user_token
 
+from database import viewed_people_create_table, checking_user_data
+
 
 class BotMessageUser:
     first: str = 'Приветствую Вас! Начинаем поиск подходящей кандидатуры?'
@@ -160,6 +162,10 @@ class ChatBot:
 
 
 if __name__ == '__main__':
+    
+    viewed_people_create_table()
+    checking_user_data()
+    
     bot = ChatBot(bot_token)
     bot.handler()
 
