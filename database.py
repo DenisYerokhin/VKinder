@@ -1,7 +1,8 @@
 import psycopg2
-from configuration import database, user, password
+from configuration import host, user, password, database
 
 with psycopg2.connect(
+        host=host,
         database=database,
         user=user,
         password=password
@@ -13,7 +14,7 @@ def viewed_people_create_table():
     with conn.cursor() as cur:
         cur.execute(
             """CREATE TABLE IF NOT EXISTS viewed_people(
-            id serial
+            id serial,
             id_vk varchar(80) PRIMARY KEY);"""
         )
 
@@ -29,7 +30,7 @@ def viewed_people_save_information(id_vk):
 def checking_user_data():
     with conn.cursor() as cur:
         cur.execute(
-            """SELECT vp.vk_id FROM viewed_people AS vp;"""
+            """SELECT vp.id_vk FROM viewed_people AS vp;"""
         )
         return cur.fetchall()
 
@@ -43,5 +44,3 @@ def viewed_people_delete_table():
 
 viewed_people_create_table()
 print("Database was created!")
-
-
