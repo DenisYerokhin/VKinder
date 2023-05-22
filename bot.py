@@ -42,6 +42,19 @@ class ChatBot:
                          }
                         )
 
+    def handler(self):
+        longpoll = VkLongPoll(self.bot)
+        for event in longpoll.listen():
+            if event.type == VkEventType.MESSAGE_NEW and event.to_me:
+                if event.text.lower() == 'привет':
+                    self.send_msg(event.user_id, 'Добрый день')
+                elif event.text.lower() == 'поиск':
+                    pass
+                elif event.text.lower() == 'далее':
+                    pass
+                else:
+                    self.send_msg(event.user_id, 'неизвестная команда')
+
     @staticmethod
     def keyboard_input():
         search_info_keyboard = VkKeyboard()
@@ -68,20 +81,6 @@ class ChatBot:
         slc_gender_keyboard.add_button('Мужской', VkKeyboardColor.PRIMARY)
         slc_gender_keyboard = slc_gender_keyboard.get_keyboard()
         return slc_gender_keyboard
-
-        @self.bot.message_handler(commands=['start'])
-        def handler(self):
-            longpoll = VkLongPoll(self.bot)
-            for event in longpoll.listen():
-                if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-                    if event.text.lower() == 'привет':
-                        self.send_msg(event.user_id, 'Добрый день')
-                    elif event.text.lower() == 'поиск':
-                        pass
-                    elif event.text.lower() == 'далее':
-                        pass
-                    else:
-                        self.send_msg(event.user_id, 'неизвестная команда')
 
     def set_search_params(self, user_id):
 
@@ -170,8 +169,5 @@ if __name__ == '__main__':
     viewed_people_create_table()
     checking_user_data()
 
-    bot = ChatBot(bot_token)
+    bot = ChatBot(user_token, bot_token)
     bot.handler()
-
-
-
