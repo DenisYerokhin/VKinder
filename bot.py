@@ -4,6 +4,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
 from configuration import bot_token, user_token
+from botopen import VkTools
 
 from database import viewed_people_create_table, checking_user_data
 
@@ -28,9 +29,13 @@ class BotMessageUser:
 
 class ChatBot:
 
-    def __init__(self, api_user, token):
-        self.bot = vk_api.VkApi(token=token)
-        self.api_user = api_user
+    def __init__(self, bot_token, user_token):
+        self.bot = vk_api.VkApi(token=bot_token)
+        self.longpoll = VkLongPoll(self.bot)
+        self.vk_tools = VkTools(user_token)
+        self.params = {}
+        self.worksheets = []
+        self.offset = 0
 
     def send_msg(self, user_id, message=None, attachment=None, keyboard=None):
         self.bot.method('messages.send',
@@ -43,42 +48,66 @@ class ChatBot:
                         )
 
     def handler(self):
-        longpoll = VkLongPoll(self.bot)
-        for event in longpoll.listen():
+        for event in self.longpoll.listen():
             if event.type == VkEventType.MESSAGE_NEW and event.to_me:
                 if event.text.lower() == 'привет':
-                    self.send_msg(event.user_id, 'Добрый день')
+                    self.params = self.vk_tools.get_profile_info(event.user_id)
+                    self.send_msg(event.user_id, f'Добрый день, {self.params["name"]}')
                 elif event.text.lower() == 'поиск':
-                    pass
-                elif event.text.lower() == 'далее':
-                    pass
+                    self.send_msg(event.user_id, 'Ищем предполагаемую пару!')
+                    if self.worksheets:
+                        worksheet = self.worksheets.pop()
+                        photos = self.vk_tools.photos_get(worksheet['id'])
+                        string_photo = ''
+                        for photo in photos:
+                            string_photo += f'photo{photo["owner_id"]}_{photo["id"]},'
+
+                    else:
+                        self.worksheets = self.vk_tools.user_search(self.params, self.offset)
+
+                        if len(self.worksheets) > 0:
+                            worksheet = self.worksheets.pop()
+                            photos = self.vk_tools.photos_get(worksheet['id'])
+                            string_photo = ''
+                            for photo in photos:
+                                string_photo += f'photo{photo["owner_id"]}_{photo["id"]},'
+                            self.offset += 10
+
+                        self.send_msg(
+                            event.user_id,
+                            f'Имя: {worksheet["name"]} ссылка: vk.com/{worksheet["id"]}',
+                            attachment=string_photo
+                        )
+
+                elif event.text.lower() == 'пока':
+                    self.send_msg(event.user_id, 'До свидания!')
                 else:
                     self.send_msg(event.user_id, 'неизвестная команда')
 
     @staticmethod
     def keyboard_input():
-        search_info_keyboard = VkKeyboard()
-        search_info_keyboard.add_button('Необходимо выбрать город: ', VkKeyboardColor.PRIMARY)
-        search_info_keyboard.add_button('Необходимо выбрать пол: ', VkKeyboardColor.PRIMARY)
-        search_info_keyboard.add_button('Осуществляем поиск пары', VkKeyboardColor.PRIMARY)
-        search_info_keyboard.add_button('Возраст от: ', VkKeyboardColor.PRIMARY)
-        search_info_keyboard.add_button('Возраст до: ', VkKeyboardColor.PRIMARY)
-        search_info_keyboard.add_button('Вернуться назад', VkKeyboardColor.PRIMARY)
+        search_info_keyboard = VkKeyboard(one_time=True)
+        search_info_keyboard.add_button('Необходимо выбрать город: ', color=VkKeyboardColor.PRIMARY)
+        search_info_keyboard.add_button('Необходимо выбрать пол: ', color=VkKeyboardColor.PRIMARY)
+        search_info_keyboard.add_button('Осуществляем поиск пары', color=VkKeyboardColor.PRIMARY)
+        search_info_keyboard.add_button('Возраст от: ', color=VkKeyboardColor.PRIMARY)
+        search_info_keyboard.add_button('Возраст до: ', color=VkKeyboardColor.PRIMARY)
+        search_info_keyboard.add_button('Вернуться назад', color=VkKeyboardColor.PRIMARY)
         search_info_keyboard = search_info_keyboard.get_keyboard()
         return search_info_keyboard
 
     @staticmethod
     def keyboard_initial():
-        keyboard_initial_cst = VkKeyboard()
-        keyboard_initial_cst.add_button('Ну что, поехали!', VkKeyboardColor.PRIMARY)
+        keyboard_initial_cst = VkKeyboard(one_time=True)
+        keyboard_initial_cst.add_button('Ну что, поехали!', color=VkKeyboardColor.PRIMARY)
         keyboard_initial = keyboard_initial_cst.get_keyboard()
         return keyboard_initial
 
     @staticmethod
     def keyboard_gender_selection():
-        slc_gender_keyboard = VkKeyboard()
-        slc_gender_keyboard.add_button('Женский', VkKeyboardColor.PRIMARY)
-        slc_gender_keyboard.add_button('Мужской', VkKeyboardColor.PRIMARY)
+        slc_gender_keyboard = VkKeyboard(one_time=True)
+        slc_gender_keyboard.add_button('Женский', color=VkKeyboardColor.PRIMARY)
+        slc_gender_keyboard.add_button('Мужской', color=VkKeyboardColor.PRIMARY)
         slc_gender_keyboard = slc_gender_keyboard.get_keyboard()
         return slc_gender_keyboard
 
@@ -118,7 +147,7 @@ class ChatBot:
                     'v': 5.131
                 }
 
-                result_hometown = self.api_user.method('database.getCities', city_param).get('items')
+                result_hometown = self.bot.method('database.getCities', city_param).get('items')
                 if not result_hometown:
                     self.send_msg(user_id, BotMessageUser.fault_hometown)
                 else:
@@ -169,5 +198,5 @@ if __name__ == '__main__':
     viewed_people_create_table()
     checking_user_data()
 
-    bot = ChatBot(user_token, bot_token)
+    bot = ChatBot(bot_token, user_token)
     bot.handler()
