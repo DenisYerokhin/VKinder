@@ -21,7 +21,7 @@ class VkTools:
         try:
             info, = self.exist_api.method('users.get',
                                           {'user_id': user_id,
-                                           'fields': 'bdate,city,sex'
+                                           'fields': 'city,sex,relation,bdate'
                                            }
                                           )
         except ApiError as e:
@@ -41,13 +41,13 @@ class VkTools:
         try:
             profiles = self.exist_api.method('users.search',
                                              {
-                                                 'home_town': params['city'],
-                                                 'age_from': params['year'] - 3,
-                                                 'age_to': params['year'] + 3,
-                                                 'sex': 1 if params['sex'] == 2 else 2,
                                                  'count': 10,
                                                  'offset': offset,
-                                                 'has_photo': True
+                                                 'hometown': params['city'],
+                                                 'sex': 1 if params['sex'] == 2 else 2,
+                                                 'has_photo': True,
+                                                 'age_from': params['year'] - 3,
+                                                 'age_to': params['year'] + 3
                                              }
                                              )
 
@@ -65,8 +65,8 @@ class VkTools:
     def photos_get(self, id):
         try:
             photos = self.exist_api.method('photos.get',
-                                           {'album_id': 'profile',
-                                            'owner_id': id,
+                                           {'owner_id': id,
+                                            'album_id': 'profile',
                                             'extended': 1
                                             }
                                            )
@@ -74,19 +74,14 @@ class VkTools:
             photos = {}
             print(f'error = {e}')
 
-        return photos
+        result = [{'owner_id': item['owner_id'],
+                   'id': item['id'],
+                   'likes': item['likes']['count'],
+                   'comments': item['comments']['count']
+                   } for item in photos['items']
+                  ]
 
-        final_result = []
-        for num, photo in enumerate(photos):
-            final_result.append({'owner_id': photo['owner_id'],
-                                 'id': photo['id'],
-                                 'likes': photo['likes']['count'],
-                                 'comments': photo['comments']['count']
-                                 })
-        final_result = sorted(final_result, key=lambda x: x['likes']['count'], reverse=True)
-        if len(final_result) > 3:
-            final_result = final_result[:3]
-        return final_result
+        return result[:3]
 
 
 if __name__ == '__main__':
