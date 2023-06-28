@@ -12,7 +12,7 @@ class VkTools:
         self.exist_api = vk_api.VkApi(token=user_token)
 
     def year_bdate(self, bdate):
-        year_user = bdate.split('.')[2]
+        year_user = bdate.split(".")[2]
         now = datetime.now().year
         return now - int(year_user)
 
@@ -32,7 +32,7 @@ class VkTools:
                         'first_name' in info and 'last_name' in info else None,
                         'sex': info.get('sex'),
                         'city': info.get('city')['title'] if info.get('city') is not None else None,
-                        'year': self.year_bdate(info.get('bdate'))
+                        'year': self.year_bdate(info.get('bdate')) if info.get('bdate') else None
                         }
         return result_final
 
@@ -57,7 +57,7 @@ class VkTools:
 
         result_now = [{'name': item['first_name'] + item['last_name'],
                        'id': item['id']
-                       } for item in profiles if item['is_closed'] is False
+                       } for item in profiles['items'] if item['is_closed'] is False
                       ]
 
         return result_now
@@ -80,6 +80,8 @@ class VkTools:
                    'comments': item['comments']['count']
                    } for item in photos['items']
                   ]
+
+        result.sort(key=lambda x: x['likes']+x['comments'], reverse=True)
 
         return result[:3]
 
