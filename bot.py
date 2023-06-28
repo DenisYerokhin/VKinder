@@ -6,7 +6,7 @@ from vk_api.utils import get_random_id
 from configuration import bot_token, user_token
 from botopen import VkTools
 
-from database import viewed_people_create_table, checking_user_data
+from database import viewed_people_create_table, checking_user_data, viewed_people_save_information
 
 
 class BotMessageUser:
@@ -78,6 +78,8 @@ class ChatBot:
                             f'Имя: {worksheet["name"]} ссылка: vk.com/{worksheet["id"]}',
                             attachment=string_photo
                         )
+
+                        viewed_people_save_information(event.user_id, worksheet['id'])
 
                 elif event.text.lower() == 'пока':
                     self.send_msg(event.user_id, 'До свидания!')
