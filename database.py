@@ -1,46 +1,44 @@
-import psycopg2
-from configuration import host, user, password, database
 
-with psycopg2.connect(
-        host=host,
-        database=database,
-        user=user,
-        password=password
-) as conn:
-    conn.autocommit = True
+import sqlalchemy as sq
+from sqlalchemy.orm import declarative_base
+from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import Session
 
 
-def viewed_people_create_table():
-    with conn.cursor() as cur:
-        cur.execute(
-            """CREATE TABLE IF NOT EXISTS viewed_people(
-            id serial,
-            id_vk varchar(80) PRIMARY KEY);"""
-        )
+from configuration import db_url_object
+
+metadata = MetaData()
+Base = declarative_base()
 
 
-def viewed_people_save_information(id_vk):
-    with conn.cursor() as cur:
-        cur.execute(
-            """INSERT INTO viewed_people(id_vk) VALUES(%s);""",
-            (id_vk,)
-        )
+class Viewed(Base):
+    __tablename__ = 'viewed'
+    profile_id = sq.Column(sq.Integer, primary_key=True)
+    worksheet_id = sq.Column(sq.Integer, primary_key=True)
 
 
-def checking_user_data():
-    with conn.cursor() as cur:
-        cur.execute(
-            """SELECT vp.id_vk FROM viewed_people AS vp;"""
-        )
-        return cur.fetchall()
+def add_user(engine, profile_id, worksheet_id):
+    with Session(engine) as session:
+        to_bd = Viewed(profile_id=profile_id, worksheet_id=worksheet_id)
+        session.add(to_bd)
+        session.commit()
 
 
-def viewed_people_delete_table():
-    with conn.cursor() as cur:
-        cur.execute(
-            """DROP TABLE viewed_people;"""
-        )
+def check_user(engine, profile_id, worksheet_id):
+    with Session(engine) as session:
+        from_bd = session.query(Viewed).filter(
+            Viewed.profile_id == profile_id,
+            Viewed.worksheet_id == worksheet_id
+        ).first()
+        return True if from_bd else False
 
 
-viewed_people_create_table()
-print("Database was created!")
+if __name__ == '__main__':
+    engine = create_engine(db_url_object)
+    Base.metadata.create_all(engine)
+    add_user(engine, 2113, 124512)
+    res = check_user(engine, 2113, 124512)
+    print(res)
+
+
+
