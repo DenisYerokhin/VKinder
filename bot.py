@@ -6,7 +6,7 @@ from vk_api.utils import get_random_id
 from configuration import bot_token, user_token
 from botopen import VkTools
 
-from database import viewed_people_create_table, checking_user_data, viewed_people_save_information
+from database import add_user
 
 
 class BotMessageUser:
@@ -62,6 +62,8 @@ class ChatBot:
                         for photo in photos:
                             string_photo += f'photo{photo["owner_id"]}_{photo["id"]},'
 
+                        add_user(event.user_id, worksheet['id'])
+
                     else:
                         self.worksheets = self.vk_tools.user_search(self.params, self.offset)
 
@@ -78,8 +80,6 @@ class ChatBot:
                             f'Имя: {worksheet["name"]} ссылка: vk.com/{worksheet["id"]}',
                             attachment=string_photo
                         )
-
-                        viewed_people_save_information(event.user_id, worksheet['id'])
 
                 elif event.text.lower() == 'пока':
                     self.send_msg(event.user_id, 'До свидания!')
@@ -196,9 +196,5 @@ class ChatBot:
 
 
 if __name__ == '__main__':
-
-    viewed_people_create_table()
-    checking_user_data()
-
     bot = ChatBot(bot_token, user_token)
     bot.handler()
