@@ -1,7 +1,4 @@
 user_token = ''
 bot_token = ''
 
-host = '127.0.0.1'
-database = ''
-user = ''
-password = ''
+db_url_object = "postgresql+psycopg2://student:student@localhost/student_diplom"
