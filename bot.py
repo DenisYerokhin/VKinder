@@ -62,13 +62,12 @@ class ChatBot:
                         for photo in photos:
                             string_photo += f'photo{photo["owner_id"]}_{photo["id"]},'
 
-                        add_user(event.user_id, worksheet['id'])
-
                     else:
                         self.worksheets = self.vk_tools.user_search(self.params, self.offset)
 
                         if len(self.worksheets) > 0:
                             worksheet = self.worksheets.pop()
+                            user_sv = check_user(engine, event.user_id, worksheet['id'])
                             photos = self.vk_tools.photos_get(worksheet['id'])
                             string_photo = ''
                             for photo in photos:
@@ -81,6 +80,10 @@ class ChatBot:
                             attachment=string_photo
                         )
 
+                        user_sv = check_user(engine, event.user_id, worksheet['id'])
+                        if user_sv is None:
+                            add_user(engine, event.user_id, worksheet['id'])
+                
                 elif event.text.lower() == 'пока':
                     self.send_msg(event.user_id, 'До свидания!')
                 else:
